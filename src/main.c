@@ -27,9 +27,9 @@ typedef struct {
     Camera3D camera;
     Model blobcat_model;
     float blobcat_model_rotation;
-} Context;
+} AnimationContext;
 
-static Context context_create(const char* underlay)
+static AnimationContext animation_context_create(const char* underlay)
 {
     Image blobcat_image_overlay = LoadImage("./assets/textures/tiny_blobcat_overlay.png");
     Image blobcat_image_underlay = LoadImage(underlay);
@@ -47,7 +47,7 @@ static Context context_create(const char* underlay)
     UnloadTexture(blobcat_texture_overlay);
     UnloadTexture(blobcat_texture_underlay);
 
-    return (Context) {
+    return (AnimationContext) {
         .camera = {
             .position = { 0.0f, 20.0f, 50.0f },
             .target = { 0.0f, 15.0f, 0.0f },
@@ -60,13 +60,13 @@ static Context context_create(const char* underlay)
     };
 }
 
-static void context_destroy(Context* context)
+static void animation_context_destroy(AnimationContext* context)
 {
     UnloadTexture(context->blobcat_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture);
     UnloadModel(context->blobcat_model);
 }
 
-static void context_update(Context* context, float dt)
+static void animation_context_update(AnimationContext* context, float dt)
 {
     ClearBackground(BACKGROUND_COLOR);
 
@@ -125,7 +125,7 @@ int main(int argc, const char** argv)
     float rendering_width = GetScreenWidth();
     float rendering_height = GetScreenHeight();
 
-    Context context = context_create(blobcat_underlay_texture);
+    AnimationContext context = animation_context_create(blobcat_underlay_texture);
     while (!WindowShouldClose()) {
         BeginDrawing();
 
@@ -147,7 +147,7 @@ int main(int argc, const char** argv)
         if (rendering_ffmpeg) {
             RenderTexture frame_texture = LoadRenderTexture(rendering_width, rendering_height);
             BeginTextureMode(frame_texture);
-            context_update(&context, 1 / rendering_fps);
+            animation_context_update(&context, 1 / rendering_fps);
             EndTextureMode();
 
             Image frame_image = LoadImageFromTexture(frame_texture.texture);
@@ -160,7 +160,7 @@ int main(int argc, const char** argv)
             UnloadImage(frame_image);
         }
 
-        context_update(&context, GetFrameTime());
+        animation_context_update(&context, GetFrameTime());
 
         const char* instruction_text = rendering_ffmpeg
             ? "Press S to stop rendering!"
@@ -189,7 +189,7 @@ int main(int argc, const char** argv)
         DrawFPS(10, 10);
         EndDrawing();
     }
-    context_destroy(&context);
+    animation_context_destroy(&context);
 
     if (rendering_ffmpeg)
         ffmpeg_end_rendering(rendering_ffmpeg);
