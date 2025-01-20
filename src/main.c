@@ -120,16 +120,19 @@ int main(int argc, const char** argv)
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(640, 480, "Blobcat");
 
+    AnimationContext animation_context = animation_context_create(blobcat_underlay_texture);
+
     FFMPEG* rendering_ffmpeg = NULL;
     const float rendering_fps = 60;
     float rendering_width = GetScreenWidth();
     float rendering_height = GetScreenHeight();
+    AnimationContext rendering_animation_context = animation_context;
 
-    AnimationContext context = animation_context_create(blobcat_underlay_texture);
     while (!WindowShouldClose()) {
         BeginDrawing();
 
         if (IsKeyPressed(KEY_R)) {
+            rendering_animation_context = animation_context;
             rendering_width = GetScreenWidth();
             rendering_height = GetScreenHeight();
             rendering_ffmpeg = ffmpeg_start_rendering((size_t)rendering_width,
@@ -147,7 +150,7 @@ int main(int argc, const char** argv)
         if (rendering_ffmpeg) {
             RenderTexture frame_texture = LoadRenderTexture(rendering_width, rendering_height);
             BeginTextureMode(frame_texture);
-            animation_context_update(&context, 1 / rendering_fps);
+            animation_context_update(&rendering_animation_context, 1 / rendering_fps);
             EndTextureMode();
 
             Image frame_image = LoadImageFromTexture(frame_texture.texture);
@@ -160,7 +163,7 @@ int main(int argc, const char** argv)
             UnloadImage(frame_image);
         }
 
-        animation_context_update(&context, GetFrameTime());
+        animation_context_update(&animation_context, GetFrameTime());
 
         const char* instruction_text = rendering_ffmpeg
             ? "Press S to stop rendering!"
@@ -189,7 +192,7 @@ int main(int argc, const char** argv)
         DrawFPS(10, 10);
         EndDrawing();
     }
-    animation_context_destroy(&context);
+    animation_context_destroy(&animation_context);
 
     if (rendering_ffmpeg)
         ffmpeg_end_rendering(rendering_ffmpeg);
