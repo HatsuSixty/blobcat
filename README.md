@@ -18,5 +18,5 @@ Press `R` to start rendering the animation into a video, and press `S` to stop r
 
 ## Credits
 
-- `./assets/models/tiny_blobcat.obj` - OBJ file rendered from <https://gitlab.com/renere/spinny_blobs/> by [green](https://mk.absturztau.be/@green);
+- `./assets/models/tiny_blobcat.obj` - OBJ file rendered by [green](https://mk.absturztau.be/@green) from the `.blend` file available at <https://gitlab.com/renere/spinny_blobs/>;
 - `./src/ffmpeg.c` & `./src/ffmpeg.h` - <https://github.com/tsoding/rendering-video-in-c-with-ffmpeg>.
