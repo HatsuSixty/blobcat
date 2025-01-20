@@ -1,0 +1,7 @@
+---
+BasedOnStyle: WebKit
+AlignAfterOpenBracket: Align
+AlignTrailingComments: 'true'
+ReflowComments: 'true'
+TabWidth: '4'
+UseTab: Never
