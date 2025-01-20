@@ -191,6 +191,9 @@ int main(int argc, const char** argv)
     }
     context_destroy(&context);
 
+    if (rendering_ffmpeg)
+        ffmpeg_end_rendering(rendering_ffmpeg);
+
     CloseWindow();
 
     return 0;
