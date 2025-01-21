@@ -14,7 +14,7 @@ To run the compiled executable, you will need to provide an underlay texture for
 $ ./main ./assets/textures/tiny_blobcat_trans_underlay.png
 ```
 
-Press `R` to start rendering the animation into a video, and press `S` to stop rendering. The generated video will be available at `./output.mp4`.
+Press `R` to start rendering the animation into a video. The generated video will be available at `./output.mp4`.
 
 ## Credits
 

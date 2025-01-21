@@ -66,7 +66,7 @@ static void animation_context_destroy(AnimationContext* context)
     UnloadModel(context->blobcat_model);
 }
 
-static void animation_context_update(AnimationContext* context, float dt)
+static bool animation_context_update(AnimationContext* context, float dt)
 {
     ClearBackground(BACKGROUND_COLOR);
 
@@ -86,8 +86,11 @@ static void animation_context_update(AnimationContext* context, float dt)
     EndMode3D();
 
     context->blobcat_model_rotation += 70.f * dt;
-    if (context->blobcat_model_rotation >= 360.f)
+    bool animation_finished = context->blobcat_model_rotation >= 360.f;
+    if (animation_finished)
         context->blobcat_model_rotation = 0;
+
+    return animation_finished;
 }
 
 static void usage(FILE* stream, const char* program_name)
@@ -124,15 +127,15 @@ int main(int argc, const char** argv)
 
     FFMPEG* rendering_ffmpeg = NULL;
     const float rendering_fps = 60;
-    float rendering_width = GetScreenWidth();
-    float rendering_height = GetScreenHeight();
-    AnimationContext rendering_animation_context = animation_context;
+    float rendering_width;
+    float rendering_height;
+    AnimationContext rendering_animation_context;
 
     while (!WindowShouldClose()) {
         BeginDrawing();
 
         if (IsKeyPressed(KEY_R)) {
-            rendering_animation_context = animation_context;
+            rendering_animation_context = animation_context_create(blobcat_underlay_texture);
             rendering_width = GetScreenWidth();
             rendering_height = GetScreenHeight();
             rendering_ffmpeg = ffmpeg_start_rendering((size_t)rendering_width,
@@ -141,41 +144,31 @@ int main(int argc, const char** argv)
             SetTraceLogLevel(LOG_WARNING);
         }
 
-        if (IsKeyPressed(KEY_S) && rendering_ffmpeg) {
-            ffmpeg_end_rendering(rendering_ffmpeg);
-            rendering_ffmpeg = NULL;
-            SetTraceLogLevel(LOG_INFO);
-        }
-
         if (rendering_ffmpeg) {
             RenderTexture frame_texture = LoadRenderTexture(rendering_width, rendering_height);
             BeginTextureMode(frame_texture);
-            animation_context_update(&rendering_animation_context, 1 / rendering_fps);
+            bool animation_finished = animation_context_update(&rendering_animation_context,
+                                                               1 / rendering_fps);
             EndTextureMode();
 
-            Image frame_image = LoadImageFromTexture(frame_texture.texture);
-            UnloadRenderTexture(frame_texture);
+            if (animation_finished) {
+                SetTraceLogLevel(LOG_INFO);
+                ffmpeg_end_rendering(rendering_ffmpeg);
+                rendering_ffmpeg = NULL;
+                animation_context_destroy(&rendering_animation_context);
+            } else {
+                Image frame_image = LoadImageFromTexture(frame_texture.texture);
+                UnloadRenderTexture(frame_texture);
 
-            ffmpeg_send_frame_flipped(rendering_ffmpeg,
-                                      frame_image.data,
-                                      frame_image.width,
-                                      frame_image.height);
-            UnloadImage(frame_image);
+                ffmpeg_send_frame_flipped(rendering_ffmpeg,
+                                          frame_image.data,
+                                          frame_image.width,
+                                          frame_image.height);
+                UnloadImage(frame_image);
+            }
         }
 
         animation_context_update(&animation_context, GetFrameTime());
-
-        const char* instruction_text = rendering_ffmpeg
-            ? "Press S to stop rendering!"
-            : "Press R to start rendering!";
-        const float instruction_text_height = 20;
-        const float instruction_text_width = MeasureText(instruction_text, instruction_text_height);
-        const float instruction_text_padding = 10;
-        DrawText(instruction_text,
-                 GetScreenWidth() - instruction_text_width - instruction_text_padding,
-                 GetScreenHeight() - instruction_text_height - instruction_text_padding,
-                 instruction_text_height,
-                 WHITE);
 
         if (rendering_ffmpeg) {
             const char* rendering_text = "Rendering...";
@@ -187,6 +180,16 @@ int main(int argc, const char** argv)
                      rendering_text_padding,
                      rendering_text_height,
                      RED);
+        } else {
+            const char* instruction_text = "Press R to start rendering!";
+            const float instruction_text_height = 20;
+            const float instruction_text_width = MeasureText(instruction_text, instruction_text_height);
+            const float instruction_text_padding = 10;
+            DrawText(instruction_text,
+                     GetScreenWidth() - instruction_text_width - instruction_text_padding,
+                     GetScreenHeight() - instruction_text_height - instruction_text_padding,
+                     instruction_text_height,
+                     WHITE);
         }
 
         DrawFPS(10, 10);
