@@ -9,12 +9,12 @@ To build, run:
 $ ./build.sh
 ```
 
-To run the compiled executable, you will need to provide an underlay texture for the blobcat model. Sample textures are provided under `./assets/textures/`:
+To run the compiled executable, you will need to provide an underlay texture for the blobcat model. Sample textures are provided under `./assets/textures/`. You will also need to specify a file format for the rendered video after the underlay texture, like so:
 ```
-$ ./main ./assets/textures/tiny_blobcat_trans_underlay.png
+$ ./main ./assets/textures/tiny_blobcat_trans_underlay.png mp4
 ```
 
-Press `R` to start rendering the animation into a video. The generated video will be available at `./output.mp4`.
+Press `R` to start rendering the animation into a video. The generated video will be available at `./output.mp4`/`./output.gif`.
 
 ## Credits
 

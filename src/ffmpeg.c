@@ -1,3 +1,5 @@
+#include "ffmpeg.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <stdint.h>
@@ -12,12 +14,12 @@
 #define READ_END 0
 #define WRITE_END 1
 
-typedef struct {
+struct FFMPEG {
     int pid;
     int pipe;
-} FFMPEG;
+};
 
-FFMPEG* ffmpeg_start_rendering(size_t width, size_t height, size_t fps)
+FFMPEG* ffmpeg_start_rendering(size_t width, size_t height, size_t fps, FFMPEGFormat format)
 {
     int pipefd[2];
 
@@ -44,28 +46,56 @@ FFMPEG* ffmpeg_start_rendering(size_t width, size_t height, size_t fps)
         char framerate[64];
         snprintf(framerate, sizeof(framerate), "%zu", fps);
 
-        // clang-format off
-        int ret = execlp("ffmpeg",
-            "ffmpeg",
-            "-loglevel", "verbose",
-            "-y",
+        int ret;
+        switch (format) {
+        case FFMPEG_FORMAT_GIF:
+            // clang-format off
+            ret = execlp("ffmpeg",
+                "ffmpeg",
+                "-loglevel", "verbose",
+                "-y",
 
-            "-f", "rawvideo",
-            "-pix_fmt", "rgba",
-            "-s", resolution,
-            "-r", framerate,
-            "-i", "-",
+                "-f", "rawvideo",
+                "-pix_fmt", "rgba",
+                "-s", resolution,
+                "-r", framerate,
+                "-i", "-",
 
-            "-c:v", "libx264",
-            "-vb", "2500k",
-            "-c:a", "aac",
-            "-ab", "200k",
-            "-pix_fmt", "yuv420p",
-            "output.mp4",
+                "-filter_complex", "[0:v]split[a][b];[a]palettegen[p];[b][p]paletteuse",
+                "-r", framerate,
+                "output.gif",
 
-            NULL
-        );
-        // clang-format on
+                NULL
+            );
+            // clang-format on
+            break;
+
+        case FFMPEG_FORMAT_MP4:
+            // clang-format off
+            ret = execlp("ffmpeg",
+                "ffmpeg",
+                "-loglevel", "verbose",
+                "-y",
+
+                "-f", "rawvideo",
+                "-pix_fmt", "rgba",
+                "-s", resolution,
+                "-r", framerate,
+                "-i", "-",
+
+                "-c:v", "libx264",
+                "-vb", "2500k",
+                "-c:a", "aac",
+                "-ab", "200k",
+                "-pix_fmt", "yuv420p",
+                "-r", framerate,
+                "output.mp4",
+
+                NULL
+            );
+            // clang-format on
+            break;
+        }
         if (ret < 0) {
             fprintf(stderr, "ERROR: could not run ffmpeg as a child process: %s\n", strerror(errno));
             exit(1);

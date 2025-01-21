@@ -66,9 +66,9 @@ static void animation_context_destroy(AnimationContext* context)
     UnloadModel(context->blobcat_model);
 }
 
-static bool animation_context_update(AnimationContext* context, float dt)
+static bool animation_context_update(AnimationContext* context, float dt, Color background_color)
 {
-    ClearBackground(BACKGROUND_COLOR);
+    ClearBackground(background_color);
 
     BeginMode3D(context->camera);
     {
@@ -95,12 +95,17 @@ static bool animation_context_update(AnimationContext* context, float dt)
 
 static void usage(FILE* stream, const char* program_name)
 {
-    fprintf(stream, "Usage: %s [FLAGS] <UNDERLAY>\n", program_name);
+    fprintf(stream, "Usage: %s [FLAGS] <UNDERLAY> <FORMAT>\n", program_name);
     fprintf(stream, "    FLAGS:\n");
     fprintf(stream, "        --help, -h  Prints this help and exits.\n");
     fprintf(stream, "\n");
     fprintf(stream, "    UNDERLAY: The underlay texture that's going to be used to render the\n");
     fprintf(stream, "              blobcat model.\n");
+    fprintf(stream, "\n");
+    fprintf(stream, "    FORMAT: The format to generate the video in when rendering. The available\n");
+    fprintf(stream, "            formats are:\n");
+    fprintf(stream, "                mp4  Generates the video in MP4 format.\n");
+    fprintf(stream, "                gif  Generates the video in GIF format.\n");
 }
 
 int main(int argc, const char** argv)
@@ -120,15 +125,32 @@ int main(int argc, const char** argv)
 
     const char* blobcat_underlay_texture = argv[1];
 
+    if (argc < 3) {
+        fprintf(stderr, "ERROR: file format not specified\n");
+        usage(stderr, program_name);
+        return 1;
+    }
+
+    FFMPEGFormat video_format;
+    if (strcmp(argv[2], "mp4") == 0)
+        video_format = FFMPEG_FORMAT_MP4;
+    else if (strcmp(argv[2], "gif") == 0)
+        video_format = FFMPEG_FORMAT_GIF;
+    else {
+        fprintf(stderr, "ERROR: invalid file format: `%s`\n", argv[2]);
+        usage(stderr, program_name);
+        return 1;
+    }
+
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(640, 480, "Blobcat");
 
     AnimationContext animation_context = animation_context_create(blobcat_underlay_texture);
 
     FFMPEG* rendering_ffmpeg = NULL;
-    const float rendering_fps = 60;
-    float rendering_width;
-    float rendering_height;
+    const float rendering_fps = 25;
+    const float rendering_width = (float)((int)(GetScreenWidth() / 2.f));
+    const float rendering_height = rendering_width;
     AnimationContext rendering_animation_context;
 
     while (!WindowShouldClose()) {
@@ -136,11 +158,10 @@ int main(int argc, const char** argv)
 
         if (IsKeyPressed(KEY_R)) {
             rendering_animation_context = animation_context_create(blobcat_underlay_texture);
-            rendering_width = GetScreenWidth();
-            rendering_height = GetScreenHeight();
             rendering_ffmpeg = ffmpeg_start_rendering((size_t)rendering_width,
                                                       (size_t)rendering_height,
-                                                      (size_t)rendering_fps);
+                                                      (size_t)rendering_fps,
+                                                      video_format);
             SetTraceLogLevel(LOG_WARNING);
         }
 
@@ -148,7 +169,7 @@ int main(int argc, const char** argv)
             RenderTexture frame_texture = LoadRenderTexture(rendering_width, rendering_height);
             BeginTextureMode(frame_texture);
             bool animation_finished = animation_context_update(&rendering_animation_context,
-                                                               1 / rendering_fps);
+                                                               1 / rendering_fps, BLANK);
             EndTextureMode();
 
             if (animation_finished) {
@@ -168,7 +189,8 @@ int main(int argc, const char** argv)
             }
         }
 
-        animation_context_update(&animation_context, GetFrameTime());
+        animation_context_update(&animation_context, GetFrameTime(),
+                                 BACKGROUND_COLOR);
 
         if (rendering_ffmpeg) {
             const char* rendering_text = "Rendering...";
