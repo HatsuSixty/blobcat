@@ -75,7 +75,8 @@ static bool animation_context_update(AnimationContext* context, float dt, Color 
         const float blobcat_model_scale = 30.0f;
         DrawModelEx(context->blobcat_model,
                     (Vector3) { 0, 4, 0 },
-                    (Vector3) { 0, 1, 0 }, context->blobcat_model_rotation,
+                    (Vector3) { 0, 1, 0 },
+                    360.f - context->blobcat_model_rotation,
                     (Vector3) {
                         blobcat_model_scale,
                         blobcat_model_scale,
