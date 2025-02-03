@@ -85,7 +85,7 @@ static bool animation_context_update(AnimationContext* context, float dt, Color 
     }
     EndMode3D();
 
-    context->blobcat_model_rotation += 70.f * dt;
+    context->blobcat_model_rotation += 150.f * dt;
     bool animation_finished = context->blobcat_model_rotation >= 360.f;
     if (animation_finished)
         context->blobcat_model_rotation = 0;
