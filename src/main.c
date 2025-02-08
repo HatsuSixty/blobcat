@@ -11,14 +11,30 @@ static Texture generate_blobcat_texture(Texture overlay, Texture underlay)
 {
     RenderTexture2D final_texture = LoadRenderTexture(overlay.width, overlay.height);
     BeginTextureMode(final_texture);
+
+    // Draw underlay
     DrawTexturePro(underlay,
                    (Rectangle) { 0, 0, overlay.width, overlay.height },
                    (Rectangle) { 0, 0, overlay.width, overlay.height },
                    (Vector2) { 0, 0 }, 0.0f, WHITE);
-    DrawTexturePro(overlay,
-                   (Rectangle) { 0, 0, overlay.width, overlay.height },
-                   (Rectangle) { 0, 0, overlay.width, overlay.height },
-                   (Vector2) { 0, 0 }, 0.0f, WHITE);
+
+    // Draw overlay
+    {
+        Shader overlay_shader = LoadShader(NULL, "./assets/shaders/overlay.fs");
+        SetShaderValueTexture(overlay_shader,
+                              GetShaderLocation(overlay_shader, "underlayTexture"),
+                              underlay);
+
+        BeginShaderMode(overlay_shader);
+        DrawTexturePro(overlay,
+                       (Rectangle) { 0, 0, overlay.width, overlay.height },
+                       (Rectangle) { 0, 0, overlay.width, overlay.height },
+                       (Vector2) { 0, 0 }, 0.0f, WHITE);
+        EndShaderMode();
+
+        UnloadShader(overlay_shader);
+    }
+
     EndTextureMode();
     return final_texture.texture;
 }
