@@ -1,6 +1,6 @@
 # Blobcat
 
-Render low poly spinning blobcat.
+Render a low poly spinning blobcat.
 
 ## Quick Start
 
